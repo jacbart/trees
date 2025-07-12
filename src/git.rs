@@ -64,41 +64,51 @@ pub fn create_git_worktree(path_str: &str, branch_name: &str) -> Result<()> {
     // open repo
     let bare_path = path.to_owned().join(".git");
     let repo = Repository::open_bare(bare_path).context("failed to open git repo")?;
-    // repo.set_workdir(&path, true)
-    //     .context("failed to set workdir")?;
-    println!("{:#?}", repo.head_detached());
-    println!("{:#?}", repo.workdir());
-    println!("{:#?}", repo.state());
-
-    // initialize a new repository in the new folder
-    // let repo = Repository::init(&new_folder)
-    //     .with_context(|| format!("failed to initialize repo {:?}", new_folder))?;
 
     // check if the branch already exists
-    // match repo.find_branch(branch_name, git2::BranchType::Local) {
-    //     Ok(_) => {
-    //         println!("Branch '{}' already exists.", branch_name);
-    //     }
-    //     Err(_) => {
-    // create a new branch
-    let head = repo.head().context("failed to get head")?;
+    match repo.find_branch(branch_name, git2::BranchType::Local) {
+        Ok(_) => {
+            println!("Branch '{}' already exists.", branch_name);
+        }
+        Err(_) => {
+            let head = repo.head().context("failed to get head")?;
 
-    let tree = head.peel_to_tree().context("failed to peel to commit")?;
-    let commit = repo
-        .find_commit(tree.id())
-        .context("failed to find commit")?;
-    repo.branch(branch_name, &commit, false)
-        .with_context(|| format!("failed to create branch '{}'", branch_name))?;
-    println!("Branch '{}' created.", branch_name);
-    //     }
-    // }
+            let peel = head.peel_to_commit().context("failed to peel to commit")?;
 
-    // create the worktree
-    let worktree = repo
-        .worktree(&worktree_name, &new_folder, None)
-        .with_context(|| format!("failed to create worktree in {:?}", new_folder))?;
+            let commit = repo
+                .find_commit(peel.id())
+                .context("failed to find commit")?;
 
-    println!("Worktree created at {:?}", worktree.path());
+            // create a new branch
+            repo.branch(branch_name, &commit, false)
+                .with_context(|| format!("failed to create branch '{}'", branch_name))?;
+            println!("Branch '{}' created.", branch_name);
+        }
+    }
+
+    // lookup worktree first
+    let mut new_tree = true;
+    let trees = repo.worktrees().context("failed to get repo's worktrees")?;
+    trees.iter().for_each(|tree| {
+        let t = match tree {
+            Some(t) => t,
+            None => "",
+        };
+        println!("{}", t);
+        if t == worktree_name {
+            new_tree = false
+        }
+    });
+
+    if new_tree {
+        // create the worktree
+        let worktree = repo
+            .worktree(&worktree_name, &new_folder, None)
+            .with_context(|| format!("failed to create worktree in {:?}", new_folder))?;
+        println!("Worktree created at {:?}", worktree.path());
+    } else {
+        println!("Already exists, idk what to do now...")
+    }
 
     Ok(())
 }
