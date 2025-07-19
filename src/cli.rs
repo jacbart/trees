@@ -20,12 +20,27 @@ pub struct Config {
         default_value_t = String::from("./"),
     )]
     pub path: String,
+
+    /// Output only directory paths (for shell integration)
+    #[arg(long, global = true)]
+    pub dir_only: bool,
 }
 
 #[derive(Subcommand)]
 pub enum Commands {
-    /// list worktrees
-    List {},
-    /// add worktree
-    Add {},
+    /// List worktrees
+    List,
+    /// Add a new worktree
+    Add,
+    /// Remove a worktree
+    Rm,
+    /// Merge two worktrees
+    Merge,
+    /// Pull updates for all worktrees
+    Pull,
+    /// Show shell integration script
+    Shell {
+        /// Shell type (zsh, bash, fish)
+        shell: String,
+    },
 }

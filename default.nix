@@ -1,12 +1,16 @@
-{ pkgs ? import <nixpkgs> {}
-, rustVersion
-, self
-, version
-, pname
-, ... }:
+{
+  pkgs ? import <nixpkgs> { },
+  rustVersion,
+  self,
+  version,
+  pname,
+  ...
+}:
 let
   inherit (pkgs) lib;
-  # outputHashes = { "package-version" = "sha256-xxx"; };
+  outputHashes = {
+    "ff-1.0.3" = "sha256-GqylWMGjcmizQulaoIlMDKVULWIYU+v7FUHFHal6NBo=";
+  };
   rustPlatform = pkgs.makeRustPlatform {
     cargo = rustVersion;
     rustc = rustVersion;
@@ -18,22 +22,23 @@ rustPlatform.buildRustPackage {
 
   buildInputs = with pkgs; [
     openssl
-    # rustls-libssl
+    git
   ];
 
   nativeBuildInputs = with pkgs; [
+    git
     pkg-config
   ];
-  
+
   cargoLock = {
     lockFile = ./Cargo.lock;
-    # inherit outputHashes;
+    inherit outputHashes;
   };
   meta = with lib; {
     inherit pname;
     description = "git worktrees simplifed";
     homepage = "https://github.com/jacbart/trees";
-    license = with licenses; [ mpl20 ];
+    license = with licenses; [ mit ];
     maintainers = with maintainers; [ jacbart ];
   };
 }
